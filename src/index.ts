@@ -1,13 +1,9 @@
 import http from "node:http";
-import { graphqlHTTPFactory } from "@via-profit-services/core";
-import schema from './schema'
+import { graphql } from "graphql";
+
+import schema from "./schema";
 
 const server = http.createServer();
-
-const httplistener = graphqlHTTPFactory({
-  schema,
-  
-});
 
 server.on("request", async (req, res) => {
   res.statusCode = 200;
@@ -18,9 +14,28 @@ server.on("request", async (req, res) => {
   // });
 
   // res.write(responce);
-  const { data, errors, extensions } = await httplistener(req, res);
-  res.write(JSON.stringify({ data, errors, extensions }));
-  res.end()
+
+  const d = /* GraphQl */ `
+    query Test ($name: String! $userId: ID!) {
+      hello(word: $name) 
+      user (userId: $userId) {
+        id
+        name
+        age
+      }
+  }
+  `;
+
+  const a = await graphql({
+    schema,
+    source: d,
+    variableValues: { name: "Ivan", userId: 123 },
+    contextValue: {foo: 'bar'}
+  });
+  console.log(a);
+
+  res.write(JSON.stringify({ foo: "bar" }));
+  res.end();
 });
 
 server.listen(8080, "localhost", () => {
